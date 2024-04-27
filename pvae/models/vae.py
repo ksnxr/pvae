@@ -38,7 +38,9 @@ class VAE(nn.Module):
             mean = get_mean_param(self.dec(mean_pz))
             px_z_params = self.dec(self.pz(*self.pz_params).sample(torch.Size([N])))
             means = get_mean_param(px_z_params)
-            samples = self.px_z(*px_z_params).sample(torch.Size([K]))
+            # https://github.com/emilemathieu/pvae/issues/18
+            temperature, logits = px_z_params
+            samples = self.px_z(temperature=temperature, logits=logits).sample(torch.Size([K]))
 
         return mean, \
             means.view(-1, *means.size()[2:]), \
@@ -48,14 +50,16 @@ class VAE(nn.Module):
         self.eval()
         with torch.no_grad():
             qz_x = self.qz_x(*self.enc(data))
-            px_z_params = self.dec(qz_x.rsample(torch.Size([1])).squeeze(0))
+            px_z_params = self.dec(qz_x.rsample(torch.Size([1])))
 
         return get_mean_param(px_z_params)
 
     def forward(self, x, K=1):
         qz_x = self.qz_x(*self.enc(x))
         zs = qz_x.rsample(torch.Size([K]))
-        px_z = self.px_z(*self.dec(zs))
+        # https://github.com/emilemathieu/pvae/issues/18
+        temperature, logits = self.dec(zs)
+        px_z = self.px_z(temperature=temperature, logits=logits)
         return qz_x, px_z, zs
 
     @property
