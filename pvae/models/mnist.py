@@ -81,5 +81,5 @@ class Mnist(VAE):
 
     def reconstruct(self, data, runPath, epoch):
         recon = super(Mnist, self).reconstruct(data[:8])
-        comp = torch.cat([data[:8], recon])
+        comp = torch.cat([data[:8], recon.squeeze(0)])
         save_image(comp.data.cpu(), '{}/recon_{:03d}.png'.format(runPath, epoch))
