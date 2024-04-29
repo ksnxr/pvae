@@ -76,6 +76,7 @@ class Mnist(VAE):
     def generate(self, runPath, epoch):
         N, K = 64, 9
         mean, means, samples = super(Mnist, self).generate(N, K)
+        mean = mean.unsqueeze(0)
         save_image(mean.data.cpu(), '{}/gen_mean_{:03d}.png'.format(runPath, epoch))
         save_image(means.data.cpu(), '{}/gen_means_{:03d}.png'.format(runPath, epoch))
 
