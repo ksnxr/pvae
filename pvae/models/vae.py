@@ -35,6 +35,7 @@ class VAE(nn.Module):
         self.eval()
         with torch.no_grad():
             mean_pz = get_mean_param(self.pz_params)
+            mean_pz = mean_pz.unsqueeze(-1)
             mean = get_mean_param(self.dec(mean_pz))
             px_z_params = self.dec(self.pz(*self.pz_params).sample(torch.Size([N])))
             means = get_mean_param(px_z_params)
