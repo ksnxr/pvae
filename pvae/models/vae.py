@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import torch.distributions as dist
 from pvae.utils import get_mean_param
 
-
 class VAE(nn.Module):
     def __init__(self, prior_dist, posterior_dist, likelihood_dist, enc, dec, params):
         super(VAE, self).__init__()
@@ -22,21 +21,12 @@ class VAE(nn.Module):
         self.prior_std = params.prior_std
 
         if self.px_z == dist.RelaxedBernoulli:
-            self.px_z.log_prob = (
-                lambda self, value: -F.binary_cross_entropy_with_logits(
-                    (
-                        self.probs
-                        if value.dim() <= self.probs.dim()
-                        else self.probs.expand_as(value)
-                    ),
-                    (
-                        value.expand(self.batch_shape)
-                        if value.dim() <= self.probs.dim()
-                        else value
-                    ),
-                    reduction="none",
+            self.px_z.log_prob = lambda self, value: \
+                -F.binary_cross_entropy_with_logits(
+                    self.probs if value.dim() <= self.probs.dim() else self.probs.expand_as(value),
+                    value.expand(self.batch_shape) if value.dim() <= self.probs.dim() else value,
+                    reduction='none'
                 )
-            )
 
     def getDataLoaders(self, batch_size, shuffle, device, *args):
         raise NotImplementedError
@@ -44,21 +34,17 @@ class VAE(nn.Module):
     def generate(self, N, K):
         self.eval()
         with torch.no_grad():
-            mean_pz = get_mean_param(self.pz_params).unsqueeze(-1)
+            mean_pz = get_mean_param(self.pz_params)
             mean = get_mean_param(self.dec(mean_pz))
             px_z_params = self.dec(self.pz(*self.pz_params).sample(torch.Size([N])))
             means = get_mean_param(px_z_params)
             # https://github.com/emilemathieu/pvae/issues/18
             temperature, logits = px_z_params
-            samples = self.px_z(temperature=temperature, logits=logits).sample(
-                torch.Size([K])
-            )
+            samples = self.px_z(temperature=temperature, logits=logits).sample(torch.Size([K]))
 
-        return (
-            mean,
-            means.view(-1, *means.size()[2:]),
-            samples.view(-1, *samples.size()[3:]),
-        )
+        return mean, \
+            means.view(-1, *means.size()[2:]), \
+            samples.view(-1, *samples.size()[3:])
 
     def reconstruct(self, data):
         self.eval()
@@ -78,9 +64,6 @@ class VAE(nn.Module):
 
     @property
     def pz_params(self):
-        return self._pz_mu.mul(1), F.softplus(self._pz_logvar).div(math.log(2)).mul(
-            self.prior_std_scale
-        )
+        return self._pz_mu.mul(1), F.softplus(self._pz_logvar).div(math.log(2)).mul(self.prior_std_scale)
 
-    def init_last_layer_bias(self, dataset):
-        pass
+    def init_last_layer_bias(self, dataset): pass
