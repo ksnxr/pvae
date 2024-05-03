@@ -154,7 +154,8 @@ def get_mean_param(params):
     For Bernoulli, skip first parameter, as that's (scalar) temperature
     """
     if params[0].dim() == 0:
-        return params[1]
+        # logits to probs
+        return torch.sigmoid(params[1])
     # elif len(params) == 3:
     #     return params[1]
     else:

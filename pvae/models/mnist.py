@@ -79,6 +79,7 @@ class Mnist(VAE):
         mean = mean.squeeze(0)
         save_image(mean.data.cpu(), '{}/gen_mean_{:03d}.png'.format(runPath, epoch))
         save_image(means.data.cpu(), '{}/gen_means_{:03d}.png'.format(runPath, epoch))
+        save_image(samples.data.cpu(), '{}/gen_samples_{:03d}.png'.format(runPath, epoch))
 
     def reconstruct(self, data, runPath, epoch):
         recon = super(Mnist, self).reconstruct(data[:8])
